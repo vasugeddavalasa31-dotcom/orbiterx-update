@@ -7,9 +7,9 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Release version tag (e.g. v3.15.0)'
+        description: 'Release version tag (e.g. v1.0.0)'
         required: true
-        default: 'v3.15.0'
+        default: 'v1.0.0'
       branch:
         description: 'Source branch from orbiterx-coding to build'
         required: false
@@ -56,6 +56,16 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
+
+      - name: Sync package.json version with release tag
+        shell: bash
+        run: |
+          RAW_TAG="${{ github.event.inputs.version || github.ref_name }}"
+          CLEAN_VERSION=$(echo "$RAW_TAG" | sed 's/^v//')
+          if [ -n "$CLEAN_VERSION" ]; then
+            echo "Setting package.json version to $CLEAN_VERSION"
+            node -e "const fs = require('fs'); const p = JSON.parse(fs.readFileSync('package.json', 'utf8')); p.version = '$CLEAN_VERSION'; fs.writeFileSync('package.json', JSON.stringify(p, null, 2) + '\n');"
+          fi
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
