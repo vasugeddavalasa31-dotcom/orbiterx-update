@@ -1,0 +1,89 @@
+name: Build & Release OrbiterX Desktop
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version tag (e.g. v3.15.0)'
+        required: true
+        default: 'v3.15.0'
+      branch:
+        description: 'Source branch from orbiterx-coding to build'
+        required: false
+        default: 'main'
+      prerelease:
+        description: 'Mark as pre-release / preview channel'
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build ${{ matrix.artifact_name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-14
+            target_os: mac
+            target_arch: arm64
+            artifact_name: macOS-arm64
+          - os: macos-13
+            target_os: mac
+            target_arch: x64
+            artifact_name: macOS-x64
+          - os: windows-latest
+            target_os: win
+            target_arch: x64
+            artifact_name: Windows-x64
+
+    steps:
+      - name: Checkout private repository (orbiterx-coding)
+        uses: actions/checkout@v4
+        with:
+          repository: vasugeddavalasa31-dotcom/orbiterx-coding
+          token: ${{ secrets.PRIVATE_REPO_PAT }}
+          ref: ${{ github.event.inputs.branch || 'main' }}
+          submodules: recursive
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.2
+
+      - name: Install dependencies
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Bundle Desktop App (${{ matrix.target_os }}/${{ matrix.target_arch }})
+        run: pnpm bundle:desktop -- --os ${{ matrix.target_os }} --arch ${{ matrix.target_arch }}
+        env:
+          CI: true
+          NODE_ENV: production
+          ORBITERX_ENV: production
+          ORBITERX_ENABLE_MAC_SIGN: 0
+
+      - name: Release to GitHub
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event.inputs.version || github.ref_name }}
+          name: Release ${{ github.event.inputs.version || github.ref_name }}
+          prerelease: ${{ github.event.inputs.prerelease || false }}
+          files: |
+            packages/desktop/dist/*.dmg
+            packages/desktop/dist/*.zip
+            packages/desktop/dist/*.exe
+            packages/desktop/dist/latest-mac.yml
+            packages/desktop/dist/latest.yml
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
