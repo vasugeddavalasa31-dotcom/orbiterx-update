@@ -34,7 +34,7 @@ jobs:
             target_os: mac
             target_arch: arm64
             artifact_name: macOS-arm64
-          - os: macos-13
+          - os: macos-14
             target_os: mac
             target_arch: x64
             artifact_name: macOS-x64
@@ -83,6 +83,16 @@ jobs:
           ORBITERX_ENV: production
           ORBITERX_ENABLE_MAC_SIGN: 0
 
+      - name: Prepare Arch Manifest for macOS
+        shell: bash
+        run: |
+          if [ "${{ matrix.target_os }}" = "mac" ] && [ "${{ matrix.target_arch }}" = "x64" ]; then
+            if [ -f packages/desktop/dist/latest-mac.yml ]; then
+              cp packages/desktop/dist/latest-mac.yml packages/desktop/dist/latest-mac-x64.yml
+              rm packages/desktop/dist/latest-mac.yml
+            fi
+          fi
+
       - name: Release to GitHub
         uses: softprops/action-gh-release@v2
         with:
@@ -94,6 +104,7 @@ jobs:
             packages/desktop/dist/*.zip
             packages/desktop/dist/*.exe
             packages/desktop/dist/latest-mac.yml
+            packages/desktop/dist/latest-mac-x64.yml
             packages/desktop/dist/latest.yml
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
