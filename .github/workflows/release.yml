@@ -99,6 +99,7 @@ jobs:
           tag_name: ${{ github.event.inputs.version || github.ref_name }}
           name: Release ${{ github.event.inputs.version || github.ref_name }}
           prerelease: ${{ github.event.inputs.prerelease || false }}
+          generate_release_notes: true
           files: |
             packages/desktop/dist/*.dmg
             packages/desktop/dist/*.zip
