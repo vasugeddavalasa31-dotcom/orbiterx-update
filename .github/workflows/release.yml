@@ -7,9 +7,9 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Release version tag (e.g. v1.1.0)'
+        description: 'Release version tag (e.g. v1.2.0)'
         required: true
-        default: 'v1.1.0'
+        default: 'v1.2.0'
       branch:
         description: 'Source branch from orbiterx-coding to build'
         required: false
@@ -55,7 +55,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24
 
       - name: Sync package.json version with release tag
         shell: bash
@@ -81,6 +81,7 @@ jobs:
           CI: true
           NODE_ENV: production
           ORBITERX_ENV: production
+          ORBITERX_CONSUMER_BUILD: "1"
           ORBITERX_ENABLE_MAC_SIGN: 0
 
       - name: Prepare Arch Manifest for macOS
